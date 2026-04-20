@@ -3,6 +3,12 @@
 Megabonk oyununda istediğin düşman sayısına sahip haritayı otomatik olarak bulan bot.  
 Ekranı okur, şartlar sağlanana kadar **R** tuşuna basar; hedef harita gelince **ESC** ile kabul eder.
 
+## İndir
+
+👉 **[Releases sayfasından son sürümü indir](https://github.com/emnakdg/MegabonkResetBot/releases/latest)**
+
+`megabonk_bot.exe` ve `Tesseract_Kur.bat` dosyalarını indir.
+
 ---
 
 ## Kurulum (İlk Kez Kullanıyorsan)
