@@ -51,25 +51,31 @@ def check_for_updates(callback):
         pass
 
 
-def apply_update(download_url):
-    """Yeni exe'yi indirir ve mevcut exe'nin üzerine yazan bir bat başlatıp çıkar."""
+def apply_update(download_url, on_progress=None):
+    """Yeni exe'yi indirir, bat ile değiştirir. Kullanıcı uygulamayı kapatıp açınca güncelleme tamamlanır."""
     try:
-        tmp_exe = tempfile.mktemp(suffix=".exe")
+        current_exe = sys.executable
+        exe_dir = os.path.dirname(current_exe)
+        tmp_exe = os.path.join(exe_dir, "_megabonk_update.exe")
+
         urllib.request.urlretrieve(download_url, tmp_exe)
 
-        current_exe = sys.executable
+        # Bat sadece değiştirme yapar, yeniden başlatmaz — env inheritance sorununu önler
         bat = f"""@echo off
 timeout /t 2 /nobreak >nul
-copy /y "{tmp_exe}" "{current_exe}"
-set _MEIPASS2=
-start "" "{current_exe}"
+move /y "{tmp_exe}" "{current_exe}"
 del "%~f0"
 """
-        bat_path = tempfile.mktemp(suffix=".bat")
+        bat_path = os.path.join(exe_dir, "_megabonk_update.bat")
         with open(bat_path, "w") as f:
             f.write(bat)
-        subprocess.Popen(["cmd", "/c", bat_path], creationflags=subprocess.CREATE_NO_WINDOW)
-        sys.exit(0)
+
+        subprocess.Popen(
+            ["cmd", "/c", bat_path],
+            creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS
+        )
+        if on_progress:
+            on_progress()
     except Exception as e:
         messagebox.showerror("Güncelleme Hatası", f"Güncelleme sırasında hata oluştu:\n{e}")
 
@@ -161,26 +167,42 @@ class MegabonkBot:
     def _show_update_dialog(self, latest_version, download_url):
         dialog = ctk.CTkToplevel(self.root)
         dialog.title("Güncelleme Mevcut")
-        dialog.geometry("360x180")
+        dialog.geometry("380x210")
         dialog.resizable(False, False)
         dialog.attributes("-topmost", True)
         dialog.grab_set()
 
         ctk.CTkLabel(dialog, text="Yeni Güncelleme Mevcut!", font=ctk.CTkFont(size=15, weight="bold")).pack(pady=(20, 5))
-        ctk.CTkLabel(dialog, text=f"v{VERSION}  →  v{latest_version}", font=ctk.CTkFont(size=13), text_color="#2ecc71").pack(pady=(0, 15))
+        ctk.CTkLabel(dialog, text=f"v{VERSION}  →  v{latest_version}", font=ctk.CTkFont(size=13), text_color="#2ecc71").pack(pady=(0, 8))
+
+        self._update_status_lbl = ctk.CTkLabel(dialog, text="", font=ctk.CTkFont(size=11))
+        self._update_status_lbl.pack(pady=(0, 8))
 
         btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
         btn_row.pack()
 
-        ctk.CTkButton(
-            btn_row, text="Güncelle", width=140, height=36,
+        update_btn = ctk.CTkButton(
+            btn_row, text="İndir ve Hazırla", width=150, height=36,
             fg_color="#2ecc71", hover_color="#27ae60", text_color="black",
-            font=ctk.CTkFont(weight="bold"),
-            command=lambda: [dialog.destroy(), apply_update(download_url)]
-        ).grid(row=0, column=0, padx=8)
+            font=ctk.CTkFont(weight="bold")
+        )
+
+        def on_update_click():
+            update_btn.configure(state="disabled")
+            self._update_status_lbl.configure(text="İndiriliyor...", text_color="#e67e22")
+            def do():
+                def done():
+                    self._update_status_lbl.configure(
+                        text="Hazır! Uygulamayı kapatıp tekrar açın.", text_color="#2ecc71"
+                    )
+                apply_update(download_url, on_progress=lambda: self.root.after(0, done))
+            threading.Thread(target=do, daemon=True).start()
+
+        update_btn.configure(command=on_update_click)
+        update_btn.grid(row=0, column=0, padx=8)
 
         ctk.CTkButton(
-            btn_row, text="Sonra", width=140, height=36,
+            btn_row, text="Sonra", width=150, height=36,
             fg_color="#555", hover_color="#444",
             command=dialog.destroy
         ).grid(row=0, column=1, padx=8)
