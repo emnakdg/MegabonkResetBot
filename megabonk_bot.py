@@ -220,25 +220,47 @@ class MegabonkBot:
         self.root.update()
 
     def _install_tesseract(self, dialog, status_lbl, install_btn):
+        import ctypes
         install_btn.configure(state="disabled")
-        status_lbl.configure(text="Kuruluyor, lütfen bekleyin...", text_color="#e67e22")
+        status_lbl.configure(text="Yönetici izni isteniyor...", text_color="#e67e22")
         self.root.update()
         try:
-            result = subprocess.run(
-                ["winget", "install", "-e", "--id", "UB-Mannheim.TesseractOCR",
-                 "--accept-package-agreements", "--accept-source-agreements", "--silent"],
-                capture_output=True, text=True, timeout=300
+            # Yönetici yetkisiyle winget'i çalıştır, kullanıcı kurulumu görebilsin
+            bat = (
+                "@echo off\n"
+                "echo Tesseract-OCR kuruluyor, lutfen bekleyin...\n"
+                "winget install -e --id UB-Mannheim.TesseractOCR "
+                "--accept-package-agreements --accept-source-agreements\n"
+                "echo.\n"
+                "echo Kurulum tamamlandi, bu pencereyi kapatabilirsiniz.\n"
+                "pause\n"
             )
-            tess_path = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-            if os.path.exists(tess_path):
-                status_lbl.configure(text="Kurulum tamamlandı! Botu başlatabilirsiniz.", text_color="#2ecc71")
-                self.tess_path_var.set(tess_path)
-            else:
-                status_lbl.configure(text="Kurulum başarısız. Manuel kurulum gerekebilir.", text_color="#e74c3c")
-                install_btn.configure(state="normal")
+            bat_path = tempfile.mktemp(suffix=".bat")
+            with open(bat_path, "w") as f:
+                f.write(bat)
+
+            ctypes.windll.shell32.ShellExecuteW(
+                None, "runas", "cmd.exe", f"/c \"{bat_path}\"", None, 1
+            )
+
+            status_lbl.configure(text="Kurulum penceresi açıldı. Tamamlanınca botu başlatın.", text_color="#2ecc71")
+
+            # Tesseract kurulana kadar arka planda kontrol et
+            threading.Thread(target=self._wait_for_tesseract, args=(status_lbl,), daemon=True).start()
         except Exception as e:
             status_lbl.configure(text=f"Hata: {e}", text_color="#e74c3c")
             install_btn.configure(state="normal")
+
+    def _wait_for_tesseract(self, status_lbl):
+        tess_path = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+        for _ in range(120):  # 10 dakika boyunca 5'er saniyede kontrol et
+            time.sleep(5)
+            if os.path.exists(tess_path):
+                self.tess_path_var.set(tess_path)
+                self.root.after(0, lambda: status_lbl.configure(
+                    text="Tesseract kuruldu! Artık botu başlatabilirsiniz.", text_color="#2ecc71"
+                ))
+                return
 
     def _show_tesseract_dialog(self):
         dialog = ctk.CTkToplevel(self.root)
