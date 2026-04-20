@@ -219,17 +219,66 @@ class MegabonkBot:
         self.log_lbl.configure(text=text, text_color=color)
         self.root.update()
 
+    def _install_tesseract(self, dialog, status_lbl, install_btn):
+        install_btn.configure(state="disabled")
+        status_lbl.configure(text="Kuruluyor, lütfen bekleyin...", text_color="#e67e22")
+        self.root.update()
+        try:
+            result = subprocess.run(
+                ["winget", "install", "-e", "--id", "UB-Mannheim.TesseractOCR",
+                 "--accept-package-agreements", "--accept-source-agreements", "--silent"],
+                capture_output=True, text=True, timeout=300
+            )
+            tess_path = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+            if os.path.exists(tess_path):
+                status_lbl.configure(text="Kurulum tamamlandı! Botu başlatabilirsiniz.", text_color="#2ecc71")
+                self.tess_path_var.set(tess_path)
+            else:
+                status_lbl.configure(text="Kurulum başarısız. Manuel kurulum gerekebilir.", text_color="#e74c3c")
+                install_btn.configure(state="normal")
+        except Exception as e:
+            status_lbl.configure(text=f"Hata: {e}", text_color="#e74c3c")
+            install_btn.configure(state="normal")
+
+    def _show_tesseract_dialog(self):
+        dialog = ctk.CTkToplevel(self.root)
+        dialog.title("Tesseract Kurulumu Gerekli")
+        dialog.geometry("380x220")
+        dialog.resizable(False, False)
+        dialog.attributes("-topmost", True)
+        dialog.grab_set()
+
+        ctk.CTkLabel(dialog, text="Tesseract-OCR Bulunamadı", font=ctk.CTkFont(size=15, weight="bold")).pack(pady=(20, 5))
+        ctk.CTkLabel(dialog, text="Bot ekranı okuyabilmek için Tesseract-OCR'a\nihtiyaç duyar. Otomatik kurulsun mu?",
+                     font=ctk.CTkFont(size=12), justify="center").pack(pady=(0, 15))
+
+        status_lbl = ctk.CTkLabel(dialog, text="", font=ctk.CTkFont(size=11))
+        status_lbl.pack(pady=(0, 8))
+
+        btn_row = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_row.pack()
+
+        install_btn = ctk.CTkButton(
+            btn_row, text="Evet, Kur", width=150, height=36,
+            fg_color="#2ecc71", hover_color="#27ae60", text_color="black",
+            font=ctk.CTkFont(weight="bold")
+        )
+        install_btn.configure(command=lambda: threading.Thread(
+            target=self._install_tesseract, args=(dialog, status_lbl, install_btn), daemon=True
+        ).start())
+        install_btn.grid(row=0, column=0, padx=8)
+
+        ctk.CTkButton(
+            btn_row, text="İptal", width=150, height=36,
+            fg_color="#555", hover_color="#444",
+            command=dialog.destroy
+        ).grid(row=0, column=1, padx=8)
+
     def start_bot(self):
         if not self.running:
             tess_path = self.tess_path_var.get()
             if not os.path.exists(tess_path):
-                messagebox.showerror(
-                    "Tesseract Bulunamadı",
-                    f"Tesseract-OCR kurulu değil veya yanlış yol!\n\n"
-                    f"Beklenen konum:\n{tess_path}\n\n"
-                    f"Çözüm: Klasördeki 'Tesseract_Kur.bat' dosyasını çalıştırarak\n"
-                    f"Tesseract-OCR'ı otomatik olarak kurabilirsiniz."
-                )
+                self._show_tesseract_dialog()
                 return
 
             pytesseract.pytesseract.tesseract_cmd = tess_path
