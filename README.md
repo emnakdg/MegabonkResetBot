@@ -7,30 +7,18 @@ Ekranı okur, şartlar sağlanana kadar **R** tuşuna basar; hedef harita gelinc
 
 👉 **[Releases sayfasından son sürümü indir](https://github.com/emnakdg/MegabonkResetBot/releases/latest)**
 
-`megabonk_bot.exe` ve `Tesseract_Kur.bat` dosyalarını indir.
+Sadece `megabonk_bot.exe` dosyasını indir.
 
 ---
 
-## Kurulum (İlk Kez Kullanıyorsan)
+## Kurulum
 
-### 1. Tesseract-OCR Kur
-Bot, ekrandaki yazıları okuyabilmek için **Tesseract-OCR** adlı ücretsiz bir programa ihtiyaç duyar.
+1. `megabonk_bot.exe` dosyasına çift tıkla.
+2. İlk açılışta **Tesseract-OCR** kurulu değilse bot sana sorar — **"Evet, Kur"** butonuna tıkla.
+3. Yönetici izni penceresi çıkarsa **"Evet"** de. Kurulum otomatik tamamlanır.
+4. Kurulum bitince botu normal kullanabilirsin.
 
-**Otomatik kurulum için:**  
-`Tesseract_Kur.bat` dosyasına **çift tıkla** ve bitimini bekle.
-
-> ⚠️ Kurulum sırasında internet bağlantısı gereklidir.  
-> Kurulum tamamlandıktan sonra botu açabilirsin.
-
----
-
-### 2. Botu Çalıştır
-
-**`.exe` ile (tavsiye edilen):**  
-`megabonk_bot.exe` dosyasına çift tıkla.
-
-**Python ile (geliştiriciler için):**  
-`baslat.bat` dosyasına çift tıkla. Gerekli kütüphaneler otomatik kurulur ve bot başlar.
+> ⚠️ Kurulum sırasında internet bağlantısı gereklidir.
 
 ---
 
@@ -49,6 +37,8 @@ Bot, ekrandaki yazıları okuyabilmek için **Tesseract-OCR** adlı ücretsiz bi
 4. Bot istediğin haritayı bulunca sesi duyarsın ve otomatik durur.
 5. İstediğin zaman **Durdur (F9)** veya `F9` ile durdurabilirsin.
 
+> Ayarların otomatik kaydedilir, her açılışta tekrar girmek zorunda değilsin.
+
 ---
 
 ## Güncelleme
@@ -59,9 +49,6 @@ Yeni sürüm varsa bir pencere açılır — **"Güncelle"** butonuna tıklaman 
 ---
 
 ## Sorun Giderme
-
-**"Tesseract bulunamadı" hatası alıyorum:**  
-→ `Tesseract_Kur.bat` dosyasını çalıştır ve kurulumun tamamlandığından emin ol.
 
 **Bot ekrandan yanlış sayılar okuyor:**  
 → Arayüzdeki **OCR Debug Modu** kutucuğunu işaretle. Botun ekrandan ne gördüğünü ayrı pencerede görebilirsin.
