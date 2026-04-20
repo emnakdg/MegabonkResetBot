@@ -61,6 +61,7 @@ def apply_update(download_url):
         bat = f"""@echo off
 timeout /t 2 /nobreak >nul
 copy /y "{tmp_exe}" "{current_exe}"
+set _MEIPASS2=
 start "" "{current_exe}"
 del "%~f0"
 """
